@@ -167,7 +167,12 @@ jobs:
 
       - name: Create ZIP of the build
         run: |
-          powershell.exe -Command "Compress-Archive -Path .\install\* -DestinationPath build-windows.zip"
+          $installDir = "${{ github.workspace }}\install\*"
+          if (Test-Path -Path $installDir) {
+            Compress-Archive -Path $installDir -DestinationPath build-windows.zip
+          } else {
+            Write-Error "Install directory not found at $installDir"
+          }
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
