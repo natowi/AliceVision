@@ -213,16 +213,17 @@ jobs:
         run: |
           rm ${{ env.vcpkgArchive }}
 
-      - name: Get CUDA Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.10
-        id: cuda-toolkit
-        with:
-          cuda: '11.6.0'						 
-	  
-      - name: Display CUDA information
-        run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
-             echo "Cuda install location "${{steps.cuda-toolkit.outputs.CUDA_PATH}}
-             nvcc -V
+     - name: Get CUDA Toolkit
+  uses: Jimver/cuda-toolkit@v0.2.10
+  id: cuda-toolkit
+  with:
+    cuda: '11.6.0'
+
+- name: Display CUDA information
+  run: |
+    echo "Installed CUDA version is ${{ steps.cuda-toolkit.outputs.cuda }}"
+    echo "CUDA install location is ${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
+    nvcc -V
 
       # Install latest CMake.
       - uses: lukka/get-cmake@latest
