@@ -217,9 +217,8 @@ jobs:
         uses: Jimver/cuda-toolkit@v0.2.10
         id: cuda-toolkit
         with:
-          cuda: '11.6.0'
-								 
-
+          cuda: '11.6.0'						 
+	  
       - name: Display CUDA information
         run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
              echo "Cuda install location "${{steps.cuda-toolkit.outputs.CUDA_PATH}}
