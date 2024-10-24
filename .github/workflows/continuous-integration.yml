@@ -215,7 +215,7 @@ jobs:
         with:
           cuda: '11.6.0'
 
-- name: Display CUDA information
+      - name: Display CUDA information
   run: |
     echo "Installed CUDA version is ${{ steps.cuda-toolkit.outputs.cuda }}"
     echo "CUDA install location is ${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
