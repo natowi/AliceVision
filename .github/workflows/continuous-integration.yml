@@ -156,18 +156,28 @@ jobs:
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
       ALICEVISION_ROOT: '${{ github.workspace }}/install'
-      VCPKG_ROOT: '${{ github.workspace}}\..\vcpkg'
+      VCPKG_ROOT: '${{ github.workspace }}\..\vcpkg'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-            submodules: recursive
+          submodules: recursive
 
-      # Remaining Windows steps...
+      # Other steps like build, test, etc.
+
+      # Step to debug and verify install directory existence
+      - name: Verify install directory
+        run: |
+          if (Test-Path -Path "${{ github.workspace }}\install") {
+            Write-Host "Install directory exists"
+            Get-ChildItem -Path "${{ github.workspace }}\install" -Recurse
+          } else {
+            Write-Error "Install directory does not exist"
+          }
 
       - name: Create ZIP of the build
         run: |
-          $installDir = "${{ github.workspace }}\install\*"
+          $installDir = "${{ github.workspace }}\install"
           if (Test-Path -Path $installDir) {
             Compress-Archive -Path $installDir -DestinationPath build-windows.zip
           } else {
