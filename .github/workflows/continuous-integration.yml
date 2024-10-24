@@ -149,30 +149,37 @@ jobs:
   build-windows:
     runs-on: windows-latest
     env:
-      DEPS_INSTALL_DIR: '${{ github.workspace }}/install'
-      buildDir: '${{ github.workspace }}/build/'
+      DEPS_INSTALL_DIR: '${{ github.workspace }}\install'
+      buildDir: '${{ github.workspace }}\build'
       vcpkgDir: '${{ github.workspace }}\..\vcpkg'
       vcpkgArchive: '${{ github.workspace }}\..\vcpkg\installed.zip'
       BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
-      ALICEVISION_ROOT: '${{ github.workspace }}/install'
+      ALICEVISION_ROOT: '${{ github.workspace }}\install'
       VCPKG_ROOT: '${{ github.workspace }}\..\vcpkg'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           submodules: recursive
 
-      # Other steps like build, test, etc.
+      - name: Ensure install directory exists
+        run: |
+          $installDir = "${{ github.workspace }}\install"
+          if (-not (Test-Path -Path $installDir)) {
+            New-Item -ItemType Directory -Path $installDir
+            Write-Host "Created install directory at $installDir"
+          }
 
-      # Step to debug and verify install directory existence
       - name: Verify install directory
         run: |
-          if (Test-Path -Path "${{ github.workspace }}\install") {
+          $installDir = "${{ github.workspace }}\install"
+          if (Test-Path -Path $installDir) {
             Write-Host "Install directory exists"
-            Get-ChildItem -Path "${{ github.workspace }}\install" -Recurse
+            Get-ChildItem -Path $installDir -Recurse
           } else {
-            Write-Error "Install directory does not exist"
+            Write-Error "Install directory does not exist at $installDir"
           }
 
       - name: Create ZIP of the build
