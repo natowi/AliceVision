@@ -181,7 +181,100 @@ jobs:
           } else {
             Write-Error "Install directory does not exist at $installDir"
           }
+      - name: vcpkg - Clone repository
+        # Uses a specific version of vcpkg
+        run: |
+          cd ..
+          git clone https://github.com/alicevision/vcpkg.git
+          cd vcpkg
+          cd ${{ github.workspace }}
+          
+      - name: vcpkg - Bootstrap
+        run: |
+           ${{ env.vcpkgDir }}\bootstrap-vcpkg.bat
 
+      - name: vcpkg - Download zip file with prebuilt binaries
+        uses: suisei-cn/actions-download-file@v1.3.0
+        id: vcpkgDownload
+        with:
+          url: "https://gitlab.com/alicevision/vcpkgArchive/-/raw/main/aliceVisionDeps-2024.08.28.zip?ref_type=heads&inline=false"
+          target: "${{ env.vcpkgDir }}"
+          filename: installed.zip
+
+      - name: vcpkg - Unzip prebuilt binaries
+        run: |
+          tar -xvzf "${{ env.vcpkgArchive }}" -C "${{ env.vcpkgDir }}"
+
+      - name: vcpkg - Display installed packages
+        run: |
+          ${{ env.vcpkgDir }}\vcpkg list
+
+      - name: vcpkg - Remove zip file with prebuilt binaries
+        run: |
+          rm ${{ env.vcpkgArchive }}
+
+      - name: Get CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.10
+        id: cuda-toolkit
+        with:
+          cuda: '11.6.0'
+								 
+
+      - name: Display CUDA information
+        run: echo "Installed cuda version is "${{steps.cuda-toolkit.outputs.cuda}}
+             echo "Cuda install location "${{steps.cuda-toolkit.outputs.CUDA_PATH}}
+             nvcc -V
+
+      # Install latest CMake.
+      - uses: lukka/get-cmake@latest
+
+      - name: Display remaining disk space (16 Go max)
+        run: |
+          Get-CimInstance -Class Win32_logicaldisk
+
+      - name: Build
+        uses: lukka/run-cmake@v3
+        with:
+          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          buildDirectory: ${{ env.buildDir }}
+          buildWithCMakeArgs: '--config Release --target install'
+          cmakeAppendedArgs: -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake
+                             -DVCPKG_TARGET_TRIPLET=x64-windows
+                             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+                             -A x64 -T host=x64
+                             -DBUILD_SHARED_LIBS=ON
+                             -DTARGET_ARCHITECTURE=core
+                             -DCMAKE_INSTALL_PREFIX=${{ env.ALICEVISION_ROOT }}
+                             -DALICEVISION_BUILD_TESTS=ON
+                             -DALICEVISION_USE_OPENCV=ON
+                             -DALICEVISION_USE_CUDA=ON
+                             -DALICEVISION_USE_CCTAG=OFF
+                             -DALICEVISION_USE_POPSIFT=OFF
+                             -DALICEVISION_USE_ALEMBIC=ON
+                             -DALICEVISION_USE_OPENGV=OFF
+                             -DALICEVISION_BUILD_STEREOPHOTOMETRY=OFF
+                             -DALICEVISION_BUILD_SEGMENTATION=OFF
+                             -DBOOST_NO_CXX11=ON
+                             -DCUDA_NVCC_FLAGS=--allow-unsupported-compiler;-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH
+
+          # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
+          cmakeBuildType: Release
+          buildWithCMake: true
+
+      - name: UnitTests
+        uses: lukka/run-cmake@v3
+        with:
+          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          buildDirectory: ${{ env.buildDir }}
+          buildWithCMakeArgs: '--config Release --target RUN_TESTS'
+          cmakeAppendedArgs: -DCMAKE_INSTALL_PREFIX:PATH=${{ env.ALICEVISION_ROOT }}
+          # This input tells run-cmake to consume the vcpkg.cmake toolchain file set by run-vcpkg.
+          cmakeBuildType: Release
+          useVcpkgToolchainFile: true
+          buildWithCMake: true
+          
       - name: Create ZIP of the build
         run: |
           $installDir = "${{ github.workspace }}\install"
